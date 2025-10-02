@@ -223,6 +223,79 @@ FCM 토큰으로 푸시 알림을 전송합니다.
 
 ---
 
+### 7. Ritual Record 생성
+
+Ritual 완료 기록을 생성합니다.
+
+**Endpoint:** `POST /api/ritual-record`
+
+**Request Body:**
+```json
+{
+  "ritual_id": "uuid (required)",
+  "user_id": "uuid (required)"
+}
+```
+
+**Response:**
+
+성공 (201):
+```json
+{
+  "id": "uuid",
+  "ritual_id": "uuid",
+  "user_id": "uuid",
+  "completed_at": "timestamp"
+}
+```
+
+실패 (400):
+```json
+{
+  "error": "ritual_id is required"
+}
+```
+또는
+```json
+{
+  "error": "user_id is required"
+}
+```
+
+---
+
+### 8. Ritual 완료 기록 조회
+
+특정 ritual의 완료 기록을 사용자 정보와 함께 조회합니다 (최신순).
+
+**Endpoint:** `GET /api/ritual/:ritual_id/records`
+
+**Parameters:**
+- `ritual_id` (path parameter, required): Ritual의 ID
+
+**Response:**
+
+성공 (200):
+```json
+[
+  {
+    "id": "uuid",
+    "ritual_id": "uuid",
+    "user_id": "uuid",
+    "completed_at": "timestamp",
+    "users": {
+      "id": "uuid",
+      "fcm_token": "string",
+      "nickname": "string",
+      "created_at": "timestamp"
+    }
+  },
+  ...
+]
+```
+
+---
+
 ## 에러 응답
 
 모든 엔드포인트는 서버 오류 발생 시 다음과 같은 응답을 반환할 수 있습니다:

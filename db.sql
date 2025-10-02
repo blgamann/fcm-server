@@ -23,3 +23,15 @@ CREATE TABLE public.ritual_users (
     CONSTRAINT ritual_users_user_id_fkey FOREIGN KEY (user_id)
         REFERENCES public.users (id) ON DELETE CASCADE
 );
+
+  CREATE TABLE public.ritual_record (
+      id UUID NOT NULL DEFAULT extensions.uuid_generate_v4(),
+      ritual_id UUID NOT NULL,
+      user_id UUID NOT NULL,
+      completed_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+      CONSTRAINT ritual_record_pkey PRIMARY KEY (id),
+      CONSTRAINT ritual_record_ritual_id_fkey FOREIGN KEY (ritual_id)
+          REFERENCES public.ritual (id) ON DELETE CASCADE,
+      CONSTRAINT ritual_record_user_id_fkey FOREIGN KEY (user_id)
+          REFERENCES public.users (id) ON DELETE CASCADE
+  );

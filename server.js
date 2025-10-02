@@ -230,6 +230,66 @@ app.post('/api/ritual', async (req, res) => {
   }
 });
 
+// POST /api/ritual-record - 새로운 ritual 완료 기록 생성
+app.post('/api/ritual-record', async (req, res) => {
+  try {
+    const { ritual_id, user_id, duration_minutes } = req.body;
+
+    if (!ritual_id) {
+      return res.status(400).json({ error: 'ritual_id is required' });
+    }
+
+    if (!user_id) {
+      return res.status(400).json({ error: 'user_id is required' });
+    }
+
+    // Ritual record 생성
+    const { data: record, error } = await supabase
+      .from('ritual_record')
+      .insert([{
+        ritual_id,
+        user_id,
+        duration_minutes
+      }])
+      .select()
+      .single();
+
+    if (error) {
+      throw error;
+    }
+
+    res.status(201).json(record);
+  } catch (error) {
+    console.error('Error creating ritual record:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// GET /api/ritual/:ritual_id/records - 특정 ritual의 완료 기록 조회
+app.get('/api/ritual/:ritual_id/records', async (req, res) => {
+  try {
+    const { ritual_id } = req.params;
+
+    const { data, error } = await supabase
+      .from('ritual_record')
+      .select(`
+        *,
+        users(*)
+      `)
+      .eq('ritual_id', ritual_id)
+      .order('completed_at', { ascending: false });
+
+    if (error) {
+      throw error;
+    }
+
+    res.json(data);
+  } catch (error) {
+    console.error('Error fetching ritual records:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // 서버 시작
 app.listen(PORT, '0.0.0.0', () => {
   console.log(`Server running on port ${PORT}`);

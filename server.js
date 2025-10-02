@@ -233,7 +233,7 @@ app.post('/api/ritual', async (req, res) => {
 // POST /api/ritual-record - 새로운 ritual 완료 기록 생성
 app.post('/api/ritual-record', async (req, res) => {
   try {
-    const { ritual_id, user_id, duration_minutes } = req.body;
+    const { ritual_id, user_id } = req.body;
 
     if (!ritual_id) {
       return res.status(400).json({ error: 'ritual_id is required' });
@@ -249,7 +249,6 @@ app.post('/api/ritual-record', async (req, res) => {
       .insert([{
         ritual_id,
         user_id,
-        duration_minutes
       }])
       .select()
       .single();

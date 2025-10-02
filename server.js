@@ -28,6 +28,25 @@ admin.initializeApp({
 app.use(cors());
 app.use(express.json());
 
+// GET /api/users - 모든 사용자 조회
+app.get('/api/users', async (req, res) => {
+  try {
+    const { data, error } = await supabase
+      .from('users')
+      .select('*')
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      throw error;
+    }
+
+    res.json(data);
+  } catch (error) {
+    console.error('Error fetching users:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // GET /api/user/:fcm_token - FCM 토큰으로 사용자 조회
 app.get('/api/user/:fcm_token', async (req, res) => {
   try {
@@ -130,7 +149,88 @@ app.post('/api/notification/send', async (req, res) => {
   }
 });
 
+// GET /api/rituals - 모든 ritual 조회
+app.get('/api/rituals', async (req, res) => {
+  try {
+    const { data, error } = await supabase
+      .from('ritual')
+      .select(`
+        *,
+        ritual_users(
+          users(*)
+        )
+      `)
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      throw error;
+    }
+
+    // ritual_users를 users 배열로 변환
+    const ritualsWithUsers = data.map(ritual => ({
+      ...ritual,
+      users: ritual.ritual_users?.map(ru => ru.users) || [],
+      ritual_users: undefined
+    }));
+
+    res.json(ritualsWithUsers);
+  } catch (error) {
+    console.error('Error fetching rituals:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// POST /api/ritual - 새로운 ritual 생성
+app.post('/api/ritual', async (req, res) => {
+  try {
+    const { title, default_minutes, user_ids } = req.body;
+
+    if (!title) {
+      return res.status(400).json({ error: 'title is required' });
+    }
+
+    if (!user_ids || !Array.isArray(user_ids) || user_ids.length === 0) {
+      return res.status(400).json({ error: 'user_ids is required and must be a non-empty array' });
+    }
+
+    // Ritual 생성
+    const { data: ritual, error: ritualError } = await supabase
+      .from('ritual')
+      .insert([{
+        title,
+        default_minutes: default_minutes || 30
+      }])
+      .select()
+      .single();
+
+    if (ritualError) {
+      throw ritualError;
+    }
+
+    // Ritual-User 관계 생성
+    const ritualUsers = user_ids.map(user_id => ({
+      ritual_id: ritual.id,
+      user_id: user_id
+    }));
+
+    const { error: ritualUsersError } = await supabase
+      .from('ritual_users')
+      .insert(ritualUsers);
+
+    if (ritualUsersError) {
+      // Ritual은 생성되었지만 user 연결 실패 시 ritual 삭제
+      await supabase.from('ritual').delete().eq('id', ritual.id);
+      throw ritualUsersError;
+    }
+
+    res.status(201).json(ritual);
+  } catch (error) {
+    console.error('Error creating ritual:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // 서버 시작
-app.listen(PORT, () => {
-  console.log(`Server is running on port ${PORT}`);
+app.listen(PORT, '0.0.0.0', () => {
+  console.log(`Server running on port ${PORT}`);
 });

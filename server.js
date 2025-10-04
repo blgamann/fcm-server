@@ -240,7 +240,7 @@ app.post('/api/ritual', async (req, res) => {
 // POST /api/ritual-record - 새로운 ritual 완료 기록 생성
 app.post('/api/ritual-record', async (req, res) => {
   try {
-    const { ritual_id, user_id } = req.body;
+    const { ritual_id, user_id, image_url, review } = req.body;
 
     if (!ritual_id) {
       return res.status(400).json({ error: 'ritual_id is required' });
@@ -251,12 +251,18 @@ app.post('/api/ritual-record', async (req, res) => {
     }
 
     // Ritual record 생성
+    const recordData = {
+      ritual_id,
+      user_id,
+    };
+
+    // 선택적 필드 추가
+    if (image_url !== undefined) recordData.image_url = image_url;
+    if (review !== undefined) recordData.review = review;
+
     const { data: record, error } = await supabase
       .from('ritual_record')
-      .insert([{
-        ritual_id,
-        user_id,
-      }])
+      .insert([recordData])
       .select()
       .single();
 

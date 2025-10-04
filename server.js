@@ -183,7 +183,7 @@ app.get('/api/rituals', async (req, res) => {
 // POST /api/ritual - 새로운 ritual 생성
 app.post('/api/ritual', async (req, res) => {
   try {
-    const { title, default_minutes, user_ids } = req.body;
+    const { title, default_minutes, user_ids, rule, start_date, end_date } = req.body;
 
     if (!title) {
       return res.status(400).json({ error: 'title is required' });
@@ -194,12 +194,19 @@ app.post('/api/ritual', async (req, res) => {
     }
 
     // Ritual 생성
+    const ritualData = {
+      title,
+      default_minutes: default_minutes || 30
+    };
+
+    // 선택적 필드 추가
+    if (rule !== undefined) ritualData.rule = rule;
+    if (start_date !== undefined) ritualData.start_date = start_date;
+    if (end_date !== undefined) ritualData.end_date = end_date;
+
     const { data: ritual, error: ritualError } = await supabase
       .from('ritual')
-      .insert([{
-        title,
-        default_minutes: default_minutes || 30
-      }])
+      .insert([ritualData])
       .select()
       .single();
 
